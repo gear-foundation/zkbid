@@ -131,11 +131,11 @@ export function Component() {
               )}
               <Input id="price" placeholder="Enter price" type="number" />
               <Textarea id="funding-proof" placeholder="Enter funding proof (0x...)" />
-              <div className="flex items-center space-x-4">
-                <Label className="text-base w-1/2" htmlFor="upload-proof">
-                  Or upload funding proof from file
+              <div className="flex items-center justify-end space-x-4">
+                <Label className="" htmlFor="upload-proof">
+                  Or upload proof from file
                 </Label>
-                <Input className="w-1/2" id="upload-proof" type="file" />
+                <Input className="hidden" id="upload-proof" type="file" />
               </div>
               <Button onClick={placeBid}>Place Bid</Button>
             </CardContent>
