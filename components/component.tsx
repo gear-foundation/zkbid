@@ -123,6 +123,12 @@ export function Component() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              {account && (
+                <div className="flex items-center gap-2">
+                  <Input className="w-full" id="address" readOnly type="text" value={account.address} />
+                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
+                </div>
+              )}
               <Input id="price" placeholder="Enter price" type="number" />
               <Textarea id="funding-proof" placeholder="Enter funding proof (0x...)" />
               <div className="flex items-center space-x-4">
