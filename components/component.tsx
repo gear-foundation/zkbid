@@ -8,19 +8,61 @@ import { TabsTrigger, TabsList, TabsContent, Tabs } from "@/components/ui/tabs"
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
-import React, { useState } from "react"
+import '@polkadot/api-augment'
+import React, { useState } from 'react'
+import { GearKeyring } from '@gear-js/api'
+import { encodeAddress } from '@polkadot/util-crypto'
+import useSWR, { mutate } from 'swr'
+
+const fetcher = async (url: string, accountId: string) => {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ accountId }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(`Failed to register for auction: ${errorData.message}`);
+  }
+
+  return res.json();
+};
 
 export function Component() {
-  const [account, setAccount] = useState<null | { address: string; privkey: string; }>(null);
+  const [account, setAccount] = useState<null | { address: string; keyring: GearKeyring; }>(null);
+  const [message, setMessage] = useState<null | string>(null);
 
-  const generateAccount = () => {
+  const generateAccount = async () => {
+    const {keyring} = await GearKeyring.create('seed');
+    
     const newAccount = {
-      address: Math.floor(Math.random() * 10000).toString(), // Randomly generated ID
-      privkey: Math.floor(Math.random() * 10000).toString(),
+      address: encodeAddress(keyring.publicKey, 137),
+      keyring: keyring,
     };
 
     setAccount(newAccount);
+  };
+
+  const registerForAuction = async () => {
+    setMessage(null);
+
+    if (!account) {
+      setMessage('Error: no account to register for auction. Go generate an account first.');
+      return;
+    }
+
+    try {
+      const data = await mutate(['/api/register', account.address], fetcher('/api/register', account.address), false);
+      setMessage(`Registered for auction: ${JSON.stringify(data)}`);
+    } catch (error) {
+      setMessage(`Error registering for auction: ${error}`);
+    }
   };
 
   return (
@@ -40,14 +82,13 @@ export function Component() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <Button onClick={generateAccount}>Generate Account</Button>
               {account && (
-                <div id="address-container">
-                  <code>
-                    {account.address}
-                  </code>
+                <div className="flex items-center gap-2">
+                  <Input className="w-full" id="address" readOnly type="text" value={account.address} />
+                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
                 </div>
               )}
+              <Button onClick={generateAccount}>Generate Account</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -58,7 +99,14 @@ export function Component() {
               <CardDescription>Sends an HTTPS request to the backend to fetch a voucher.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <Button onClick={undefined}>Register for Auction</Button>
+              {account && (
+                <div className="flex items-center gap-2">
+                  <Input className="w-full" id="address" readOnly type="text" value={account.address} />
+                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
+                </div>
+              )}
+              <Button onClick={registerForAuction}>Register for Auction</Button>
+              {message && <div>{message}</div>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -72,7 +120,13 @@ export function Component() {
             </CardHeader>
             <CardContent className="grid gap-4">
               <Input id="price" placeholder="Enter price" type="number" />
-              <Input id="funding-proof" placeholder="Enter funding proof" type="text" />
+              <Textarea id="funding-proof" placeholder="Enter funding proof" />
+              <div>
+                <Label className="text-base" htmlFor="upload-proof">
+                  Upload Funding Proof
+                </Label>
+                <Input id="upload-proof" type="file" />
+              </div>
               <Button onClick={undefined}>Place Bid</Button>
             </CardContent>
           </Card>
