@@ -65,6 +65,10 @@ export function Component() {
     }
   };
 
+  const placeBid = async () => {
+    window.alert('Not implemented');
+  };
+
   return (
     <>
       <Tabs className="w-full" defaultValue="account">
@@ -120,14 +124,14 @@ export function Component() {
             </CardHeader>
             <CardContent className="grid gap-4">
               <Input id="price" placeholder="Enter price" type="number" />
-              <Textarea id="funding-proof" placeholder="Enter funding proof" />
-              <div>
-                <Label className="text-base" htmlFor="upload-proof">
-                  Upload Funding Proof
+              <Textarea id="funding-proof" placeholder="Enter funding proof (0x...)" />
+              <div className="flex items-center space-x-4">
+                <Label className="text-base w-1/2" htmlFor="upload-proof">
+                  Or upload funding proof from file
                 </Label>
-                <Input id="upload-proof" type="file" />
+                <Input className="w-1/2" id="upload-proof" type="file" />
               </div>
-              <Button onClick={undefined}>Place Bid</Button>
+              <Button onClick={placeBid}>Place Bid</Button>
             </CardContent>
           </Card>
         </TabsContent>
