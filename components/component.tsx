@@ -17,14 +17,15 @@ import React, { useState } from 'react'
 import { GearKeyring } from '@gear-js/api'
 import { encodeAddress } from '@polkadot/util-crypto'
 import useSWR, { mutate } from 'swr'
+import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks'
 
-const fetcher = async (url: string, accountId: string) => {
-  const res = await fetch(url, {
+const register = async (address: string) => {
+  const res = await fetch(`/api/register/${address}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ accountId }),
+    body: JSON.stringify({ address }),
   });
 
   if (!res.ok) {
@@ -35,9 +36,18 @@ const fetcher = async (url: string, accountId: string) => {
   return res.json();
 };
 
+enum Progress {
+  ACCOUNT = 1,
+  REGISTER,
+  PROOF,
+  BID,
+}
+
 export function Component() {
   const [account, setAccount] = useState<null | { address: string; keyring: GearKeyring; }>(null);
   const [message, setMessage] = useState<null | string>(null);
+  const [progress, setProgress] = useState<Progress>(Progress.ACCOUNT);
+  const [selectedTab, setSelectedTab] = useState<string>('account');
 
   const generateAccount = async () => {
     const {keyring} = await GearKeyring.create('seed');
@@ -48,6 +58,9 @@ export function Component() {
     };
 
     setAccount(newAccount);
+    setProgress(Progress.REGISTER);
+    setMessage(null);
+    setTimeout(()=>setSelectedTab('register'), 1000);
   };
 
   const registerForAuction = async () => {
@@ -59,54 +72,75 @@ export function Component() {
     }
 
     try {
-      const data = await mutate(['/api/register', account.address], fetcher('/api/register', account.address), false);
-      setMessage(`Registered for auction: ${JSON.stringify(data)}`);
+      const data = await mutate([account.address], register(account.address), false);
+      setMessage(`${JSON.stringify(data, null, "  ")}`);
+      setProgress(Progress.PROOF);
+      setTimeout(()=>setSelectedTab('proof'), 1000);
     } catch (error) {
       setMessage(`Error registering for auction: ${error}`);
+      setProgress(Progress.REGISTER);
     }
+  };
+
+  const generateProof = async () => {
+    setProgress(Progress.BID);
+    setTimeout(()=>setSelectedTab('bid'), 1000);
   };
 
   const placeBid = async () => {
     window.alert('Not implemented');
   };
 
+  const code = `# set the secret key of the main funding account
+export SURI="abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon cactus"
+
+# install the zkBid CLI
+cargo install zkbid-cli
+
+# generate a proof that the main account has enough funds to place a bid, for example, 42 VARA
+# you should replace the price with the actual price you want to bid
+# the proof will be saved to proof.txt
+zkbid proof --suri "$SURI" --price 42 > proof.txt`;
+
   return (
     <div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Bidder Address</TableHead>
-            <TableHead>Funding Address</TableHead>
-            <TableHead>Bid Price</TableHead>
+            <TableHead className="font-bold text-center" colSpan={4}>
+              All Existing Bids
+            </TableHead>
+          </TableRow>
+          <TableRow>
+            <TableHead>Bidder</TableHead>
+            <TableHead>Price (VARA)</TableHead>
             <TableHead>Bidding Time</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell>0x8d3e3e...</TableCell>
-            <TableCell>0x5a1b2c...</TableCell>
-            <TableCell>$500</TableCell>
+            <TableCell>kG8d3e3e...</TableCell>
+            <TableCell>500</TableCell>
             <TableCell>2024-02-20 15:30:45</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell>0x5a1b2c...</TableCell>
-            <TableCell>0xf4e7d2...</TableCell>
-            <TableCell>$700</TableCell>
+            <TableCell>kG5a1b2c...</TableCell>
+            <TableCell>700</TableCell>
             <TableCell>2024-02-20 14:20:10</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell>0xf4e7d2...</TableCell>
-            <TableCell>0x8d3e3e...</TableCell>
-            <TableCell>$1000</TableCell>
+            <TableCell>kGf4e7d2...</TableCell>
+            <TableCell>1000</TableCell>
             <TableCell>2024-02-20 12:45:30</TableCell>
           </TableRow>
         </TableBody>
       </Table>
-      <Tabs className="w-full" defaultValue="account">
-        <TabsList className="grid grid-cols-3 gap-4">
-          <TabsTrigger value="account">1. Generate Account</TabsTrigger>
-          <TabsTrigger value="register">2. Register for Auction</TabsTrigger>
-          <TabsTrigger value="bid">3. Place Bid</TabsTrigger>
+      <Tabs  className="w-full overflow-x-auto" defaultValue="account" value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="grid grid-cols-4 gap-4">
+          <TabsTrigger value="account" disabled={progress < Progress.ACCOUNT}>Generate Account</TabsTrigger>
+          <TabsTrigger value="register" disabled={progress < Progress.REGISTER}>Register for Auction</TabsTrigger>
+          <TabsTrigger value="proof" disabled={progress < Progress.PROOF}>Generate Proof</TabsTrigger>
+          <TabsTrigger value="bid" disabled={progress < Progress.BID}>Place Bid</TabsTrigger>
         </TabsList>
         <TabsContent value="account">
           <Card>
@@ -120,7 +154,6 @@ export function Component() {
               {account && (
                 <div className="flex items-center gap-2">
                   <Input className="w-full" id="address" readOnly type="text" value={account.address} />
-                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
                 </div>
               )}
               <Button onClick={generateAccount}>Generate Account</Button>
@@ -137,11 +170,22 @@ export function Component() {
               {account && (
                 <div className="flex items-center gap-2">
                   <Input className="w-full" id="address" readOnly type="text" value={account.address} />
-                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
                 </div>
               )}
+              {message && <CodeBlock text={message} language={"json"} showLineNumbers={false} wrapLongLines theme={dracula} />}
               <Button onClick={registerForAuction}>Register for Auction</Button>
-              {message && <div>{message}</div>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+	      <TabsContent value="proof">
+          <Card>
+            <CardHeader>
+              <CardTitle>Generate Proof</CardTitle>
+              <CardDescription>Takes private key of main account(one that is funded) and generates proof that it have enough funds to place a bid. Instructions for generating proof locally:</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+            <CopyBlock language={"bash"} text={code} showLineNumbers wrapLongLines theme={dracula} />
+            <Button onClick={generateProof}>I have generated the proof</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -157,7 +201,6 @@ export function Component() {
               {account && (
                 <div className="flex items-center gap-2">
                   <Input className="w-full" id="address" readOnly type="text" value={account.address} />
-                  {/*<Button onClick={undefined}>Copy to Clipboard</Button>*/}
                 </div>
               )}
               <Input id="price" placeholder="Enter price" type="number" />
