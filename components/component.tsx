@@ -183,7 +183,7 @@ zkbid proof --suri "$SURI" --price 42 > proof.txt`;
         </TableBody>
       </Table>
       <Tabs  className="w-full overflow-x-auto" defaultValue="account" value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid grid-cols-4 gap-4">
+        <TabsList className="grid grid-cols-4 gap-4 flex flex-wrap">
           <TabsTrigger value="account" disabled={DEBUG ? false : progress < Progress.ACCOUNT}>Generate Account</TabsTrigger>
           <TabsTrigger value="register" disabled={DEBUG ? false : progress < Progress.REGISTER}>Register for Auction</TabsTrigger>
           <TabsTrigger value="proof" disabled={DEBUG ? false : progress < Progress.PROOF}>Generate Proof</TabsTrigger>
