@@ -10,4 +10,4 @@ ENV PORT=8000
 
 EXPOSE 8000
 
-RUN yarn dev
+CMD yarn dev
