@@ -18,6 +18,7 @@ import { GearKeyring } from '@gear-js/api'
 import { encodeAddress } from '@polkadot/util-crypto'
 import useSWR, { mutate } from 'swr'
 import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks'
+import { FileUploader } from 'react-drag-drop-files'
 
 const register = async (address: string) => {
   const res = await fetch(`/api/register/${address}`, {
@@ -43,11 +44,14 @@ enum Progress {
   BID,
 }
 
+const DEBUG = true;
+
 export function Component() {
   const [account, setAccount] = useState<null | { address: string; keyring: GearKeyring; }>(null);
   const [message, setMessage] = useState<null | string>(null);
   const [progress, setProgress] = useState<Progress>(Progress.ACCOUNT);
   const [selectedTab, setSelectedTab] = useState<string>('account');
+  const [file, setFile] = useState(null);
 
   const generateAccount = async () => {
     const {keyring} = await GearKeyring.create('seed');
@@ -85,6 +89,10 @@ export function Component() {
   const generateProof = async () => {
     setProgress(Progress.BID);
     setTimeout(()=>setSelectedTab('bid'), 1000);
+  };
+
+  const uploadProof = (file) => {
+    setFile(file);
   };
 
   const placeBid = async () => {
@@ -137,10 +145,10 @@ zkbid proof --suri "$SURI" --price 42 > proof.txt`;
       </Table>
       <Tabs  className="w-full overflow-x-auto" defaultValue="account" value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid grid-cols-4 gap-4">
-          <TabsTrigger value="account" disabled={progress < Progress.ACCOUNT}>Generate Account</TabsTrigger>
-          <TabsTrigger value="register" disabled={progress < Progress.REGISTER}>Register for Auction</TabsTrigger>
-          <TabsTrigger value="proof" disabled={progress < Progress.PROOF}>Generate Proof</TabsTrigger>
-          <TabsTrigger value="bid" disabled={progress < Progress.BID}>Place Bid</TabsTrigger>
+          <TabsTrigger value="account" disabled={DEBUG ? false : progress < Progress.ACCOUNT}>Generate Account</TabsTrigger>
+          <TabsTrigger value="register" disabled={DEBUG ? false : progress < Progress.REGISTER}>Register for Auction</TabsTrigger>
+          <TabsTrigger value="proof" disabled={DEBUG ? false : progress < Progress.PROOF}>Generate Proof</TabsTrigger>
+          <TabsTrigger value="bid" disabled={DEBUG ? false : progress < Progress.BID}>Place Bid</TabsTrigger>
         </TabsList>
         <TabsContent value="account">
           <Card>
@@ -203,14 +211,34 @@ zkbid proof --suri "$SURI" --price 42 > proof.txt`;
                   <Input className="w-full" id="address" readOnly type="text" value={account.address} />
                 </div>
               )}
-              <Input id="price" placeholder="Enter price" type="number" />
-              <Textarea id="funding-proof" placeholder="Enter funding proof (0x...)" />
-              <div className="flex items-center justify-end space-x-4">
-                <Label className="" htmlFor="upload-proof">
-                  Or upload proof from file
+              <div className="flex items-center space-x-4">
+                <Input id="price" placeholder="Enter price" type="number" />
+                <Label className="" htmlFor="vara">
+                  VARA
                 </Label>
-                <Input className="hidden" id="upload-proof" type="file" />
               </div>
+              <FileUploader
+                label="Drag and drop your proof file here, or click to select file from disk. "
+                multiple={false}
+                handleChange={uploadProof}
+                name="proof.txt"
+                types={["TXT"]}
+                classes={"uploader"}
+                className="w-full h-full"
+              >
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center"
+                  style={{
+                    height: "200px",
+                    border: "2px dashed #e9e9e9",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <h5>Drag and drop your proof file here, or click to select file from disk.</h5>
+                  <br/>
+                  <h5>{file ? `Selected file: ${file.name}` : "(No proof file uploaded yet)"}</h5>
+                </div>
+              </FileUploader>
               <Button onClick={placeBid}>Place Bid</Button>
             </CardContent>
           </Card>
