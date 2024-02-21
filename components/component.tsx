@@ -19,6 +19,7 @@ import { encodeAddress } from '@polkadot/util-crypto'
 import useSWR, { mutate } from 'swr'
 import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks'
 import { FileUploader } from 'react-drag-drop-files'
+import { hexToU8a } from '@polkadot/util'
 
 const register = async (address: string) => {
   const res = await fetch(`/api/register/${address}`, {
@@ -51,7 +52,8 @@ export function Component() {
   const [message, setMessage] = useState<null | string>(null);
   const [progress, setProgress] = useState<Progress>(Progress.ACCOUNT);
   const [selectedTab, setSelectedTab] = useState<string>('account');
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<null | File>(null);
+  const [price, setPrice] = useState<number | null>(null);
 
   const generateAccount = async () => {
     const {keyring} = await GearKeyring.create('seed');
@@ -91,11 +93,48 @@ export function Component() {
     setTimeout(()=>setSelectedTab('bid'), 1000);
   };
 
-  const uploadProof = (file) => {
+  const uploadProof = (file: File) => {
     setFile(file);
   };
 
+  const readAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e: ProgressEvent<FileReader>) {
+        const text = e.target!.result;
+        resolve(text as string);
+      };
+      reader.onerror = function(e) {
+        reject(new Error("Failed to read file"));
+      };
+      reader.readAsText(file);
+    });
+  };
+
   const placeBid = async () => {
+    console.log('placeBid', file, account);
+
+    if (!account) {
+      window.alert('Error: no account to place bid. Go generate an account first.');
+      return;
+    }
+
+    if (!price || price <= 0) {
+      window.alert('Error: no valid price to place bid. Enter a valid price and try again.');
+      return;
+    }
+
+    if (!file) {
+      window.alert('Error: no proof file uploaded. Go generate a proof and upload it first.');
+      return;
+    }
+
+    let proof = await readAsText(file);
+
+    let proofBytes = hexToU8a(`0x${proof}`);
+    console.log('proof:', proof);
+    console.log('proofBytes:', proofBytes);
+
     window.alert('Not implemented');
   };
 
@@ -212,7 +251,7 @@ zkbid proof --suri "$SURI" --price 42 > proof.txt`;
                 </div>
               )}
               <div className="flex items-center space-x-4">
-                <Input id="price" placeholder="Enter price" type="number" />
+                <Input id="price" placeholder="Enter price" type="number" onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrice(Number(event.target.value))} />
                 <Label className="" htmlFor="vara">
                   VARA
                 </Label>
