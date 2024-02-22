@@ -27,13 +27,14 @@ import { Textarea } from "@/components/ui/textarea";
 
 import "@polkadot/api-augment";
 import React, { useEffect, useState } from "react";
-import { GearApi, GearKeyring, ProgramMetadata } from '@gear-js/api';
+import { GearApi, GearKeyring, HexString, ProgramMetadata } from '@gear-js/api';
 import { encodeAddress } from "@polkadot/util-crypto";
 import useSWR, { mutate } from "swr";
 import { CodeBlock, CopyBlock, dracula } from "react-code-blocks";
 import { FileUploader } from "react-drag-drop-files";
 import { hexToU8a } from "@polkadot/util";
 import { KeyringPair } from '@polkadot/keyring/types';
+import { AnyJson } from "@polkadot/types/types";
 
 const register = async (address: string) => {
   const res = await fetch(`/api/register/${address}`, {
@@ -71,7 +72,7 @@ declare global {
   }
 }
 
-async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: string, amount: number, programData: { programId: string, metadata: string }) {
+async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: string, amount: number, programData: { programId: HexString, metadata: string }) {
 
   const messageTx = api.message.send({
     destination: programData.programId,
@@ -80,8 +81,8 @@ async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: s
         proof,
         amount: `${amount}`,
       }
-    },
-    gasLimit: 1000000000000,
+    } as unknown as AnyJson,
+    gasLimit: 10000000000,
     value: 0
   }, ProgramMetadata.from(programData.metadata));
 
@@ -222,7 +223,7 @@ cargo install zkbid-cli
 zkbid proof --suri "$SURI" --price 42 > proof.txt`;
 const { data: programData, error: programDataError } = useSWR('/api/program-id', fetcher);
 
-let { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
+const { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
 
 if (programDataError) return <div>Failed to load programData</div>;
 if (error) return <div>Failed to load state</div>;
