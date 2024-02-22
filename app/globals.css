@@ -19,10 +19,42 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-end-rgb));
+  background-image: url('/images/zkbid_background.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 98vh;
 }
+
+.data-\[state\=active\]\:bg-white[data-state="active"] {
+  background-color: #000 !important;
+  color: white !important;
+  border-radius: 0px 20px 0px 20px !important;
+  opacity: 1;
+}
+
+.tracking-tight {
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: center;
+  color: black;
+
+}
+
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  color: white !important;
 }
