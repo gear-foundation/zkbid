@@ -1,4 +1,4 @@
-import { GearApi, HexString, IUpdateVoucherParams, VoucherIssuedData, VoucherUpdatedData } from '@gear-js/api';
+import { GearApi, HexString, IUpdateVoucherParams, ProgramMetadata, VoucherIssuedData, VoucherUpdatedData } from '@gear-js/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { waitReady } from '@polkadot/wasm-crypto';
 import { hexToU8a } from '@polkadot/util';
@@ -115,5 +115,30 @@ export class AuctionService {
     }
 
     return bidder;
+  }
+
+  async getProgramState(){
+    let metaText = config.app.programMetadata;
+    let meta = ProgramMetadata.from(`0x${metaText}`);
+
+    let programId: HexString =
+      `0x25150391f5a9f8b47246b17d2e41dfeb3381aa587ad55dbeb2172a664fa9a49a`; // TODO: use config.app.auctionProgram;
+
+    let result = await this._api.programState.read(
+      {
+        programId,
+        payload: undefined
+      },
+      meta,
+    );
+
+    let state = {
+      bids: (result as any).bids.map(([address, amount]: [any, any]) => ({ address, amount: amount.toHuman() })),
+      highestBid: (result as any).highestBid.toHuman(),
+    }
+
+    // console.log("data:", JSON.stringify(data, null, "  "));
+
+    return state;
   }
 }
