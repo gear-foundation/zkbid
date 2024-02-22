@@ -38,6 +38,8 @@ const register = async (address: string) => {
   return res.json();
 };
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 enum Progress {
   ACCOUNT = 1,
   REGISTER,
@@ -149,6 +151,17 @@ cargo install zkbid-cli
 # the proof will be saved to proof.txt
 zkbid proof --suri "$SURI" --price 42 > proof.txt`;
 
+  const { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
+
+  if (error) return <div>Failed to load</div>;
+  if (!data) return <div>Loading...</div>;
+
+  // Sort bids in descending order by amount and add rank
+  const sortedBids = [...data.bids].sort((a, b) => b.amount - a.amount);
+  sortedBids.forEach((bid, index) => {
+    bid.rank = index + 1;
+  });
+
   return (
     <div>
       <Table>
@@ -161,26 +174,22 @@ zkbid proof --suri "$SURI" --price 42 > proof.txt`;
           <TableRow>
             <TableHead>Bidder</TableHead>
             <TableHead>Price (VARA)</TableHead>
-            <TableHead>Bidding Time</TableHead>
+            <TableHead>Rank</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell>kG8d3e3e...</TableCell>
-            <TableCell>500</TableCell>
-            <TableCell>2024-02-20 15:30:45</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>kG5a1b2c...</TableCell>
-            <TableCell>700</TableCell>
-            <TableCell>2024-02-20 14:20:10</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>kGf4e7d2...</TableCell>
-            <TableCell>1000</TableCell>
-            <TableCell>2024-02-20 12:45:30</TableCell>
-          </TableRow>
-        </TableBody>
+        {
+          data ? (
+            <TableBody>
+            {sortedBids.map((bid) => (
+              <TableRow key={bid.address}>
+                <TableCell>{encodeAddress(bid.address, 137)}</TableCell>
+                <TableCell>{bid.amount}</TableCell>
+                <TableCell>{bid.rank}</TableCell>
+              </TableRow>
+            ))}
+            </TableBody>
+          ) : (<div>Loading...</div>)
+        }
       </Table>
       <Tabs  className="w-full overflow-x-auto" defaultValue="account" value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid grid-cols-4 gap-4 flex flex-wrap">
