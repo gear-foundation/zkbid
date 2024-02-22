@@ -104,12 +104,6 @@ export class Server {
     return res.status(200).json(state);
   }
 
-  async getProgramState(req: Request, res: Response) {
-    let state = await this._auctionService.getProgramState();
-
-    return res.status(200).json(state);
-  }
-
   run() {
     this._app.listen(3000, () => {
       logger.info('Server is running on port 3000');
