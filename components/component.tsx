@@ -221,10 +221,10 @@ cargo install zkbid-cli
 # the proof will be saved to proof.txt
 zkbid proof --suri "$SURI" --price 42 > proof.txt`;
 const { data: programData, error: programDataError } = useSWR('/api/program-id', fetcher);
-if (programDataError) return <div>Failed to load programData</div>;
 
 let { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
 
+if (programDataError) return <div>Failed to load programData</div>;
 if (error) return <div>Failed to load state</div>;
 if (!data) return <div>Loading...</div>;
 /*
