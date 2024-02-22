@@ -16,7 +16,7 @@ services:
       - DB_DATABASE=auction
       - GEAR_NODE=wss://testnet.vara.network
       - ACCOUNT_SEED=0x0b3699626cff12f26bc26504d097568859e5550d9c45d879c10f0dd4e37a5c3b
-      - AUCTION_PROGRAM=0xd34dacf935bb3677389f8f8fd58d26b89836edfb355f105618071ef8a47506cd
+      - AUCTION_PROGRAM=0x25150391f5a9f8b47246b17d2e41dfeb3381aa587ad55dbeb2172a664fa9a49a
       - VOUCHER_AMOUNT=30
       - VOUCHER_DURAION=30000
     depends_on:
