@@ -82,7 +82,7 @@ async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: s
         amount: `${amount}`,
       }
     } as unknown as AnyJson,
-    gasLimit: 1000000000000,
+    gasLimit: 10000000000,
     value: 0
   }, ProgramMetadata.from(programData.metadata));
 
