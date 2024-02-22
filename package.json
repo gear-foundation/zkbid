@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "[[ -d backend ]] && rm -rf backend; next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -28,7 +28,8 @@
     "react-drag-drop-files": "^2.3.10",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.2.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@types/node": "^20",
