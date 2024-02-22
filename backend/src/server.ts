@@ -25,6 +25,7 @@ export class Server {
     this._app.post('/api/register/:account', this.registerBidder.bind(this));
     this._app.get('/api/query/:account', this.queryBidder.bind(this));
     this._app.get('/api/program-id', this.getProgramId.bind(this));
+    this._app.get('/api/program-state', this.getProgramState.bind(this))
   }
 
   async registerBidder(req: Request, res: Response) {
@@ -92,6 +93,12 @@ export class Server {
 
   async getProgramId(req: Request, res: Response) {
     return res.status(200).json({ programId: config.app.auctionProgram });
+  }
+
+  async getProgramState(req: Request, res: Response) {
+    let state = await this._auctionService.getProgramState();
+
+    return res.status(200).json(state);
   }
 
   run() {
