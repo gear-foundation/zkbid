@@ -6,7 +6,7 @@ type RequestData = {
 }
 
 type ResponseData = {
-  voucher?: string,
+  voucherId?: string,
   message: string,
 }
  
@@ -32,7 +32,7 @@ export default function handler(
     // You can access the address with the address variable
 
     // After handling the request, send a response with res.status().json()
-    res.status(200).json({ message: `User at address ${address} registered successfully`, voucher: '123456'});
+    res.status(200).json({ message: `User at address ${address} registered successfully`, voucherId: '123456'});
   } else {
     // Handle any other HTTP method
     res.setHeader('Allow', ['POST']);

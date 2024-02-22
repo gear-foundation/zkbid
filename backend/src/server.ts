@@ -1,4 +1,4 @@
-import { HexString, decodeAddress } from '@gear-js/api';
+import { HexString, ProgramMetadata, decodeAddress } from '@gear-js/api';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { AuctionService } from './auction.service';
@@ -92,7 +92,16 @@ export class Server {
   }
 
   async getProgramId(req: Request, res: Response) {
-    return res.status(200).json({ programId: config.app.auctionProgram });
+    return res.status(200).json({
+      programId: config.app.auctionProgram,
+      metadata: config.app.programMetadata,
+    });
+  }
+
+  async getProgramState(req: Request, res: Response) {
+    let state = await this._auctionService.getProgramState();
+
+    return res.status(200).json(state);
   }
 
   async getProgramState(req: Request, res: Response) {
