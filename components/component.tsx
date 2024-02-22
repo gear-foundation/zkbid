@@ -79,7 +79,7 @@ async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: s
     payload: {
       Bid: {
         proof,
-        amount: `${amount}`,
+        amount: amount,
       }
     } as unknown as AnyJson,
     gasLimit: 10000000000,
@@ -194,6 +194,7 @@ export function Component() {
       );
       return;
     }
+    console.log('price:', price);
 
     if (!file) {
       window.alert(
@@ -275,9 +276,9 @@ if (!data) return <div>Loading...</div>;
             <TableBody>
             {sortedBids.map((bid) => (
               <TableRow key={bid.address}>
-                <TableCell>{encodeAddress(bid.address, 137)}</TableCell>
-                <TableCell>{bid.amount}</TableCell>
-                <TableCell>{bid.rank}</TableCell>
+                <TableCell className="text-gray-500">{encodeAddress(bid.address, 137)}</TableCell>
+                <TableCell className="text-gray-500">{bid.amount}</TableCell>
+                <TableCell className="text-gray-500">{bid.rank}</TableCell>
               </TableRow>
             ))}
             </TableBody>
