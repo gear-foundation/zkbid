@@ -13,13 +13,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 import '@polkadot/api-augment'
-import React, { useState } from 'react'
-import { GearKeyring } from '@gear-js/api'
+import React, { useEffect, useState } from 'react'
+import { GearApi, GearKeyring, ProgramMetadata } from '@gear-js/api'
 import { encodeAddress } from '@polkadot/util-crypto'
 import useSWR, { mutate } from 'swr'
 import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks'
 import { FileUploader } from 'react-drag-drop-files'
 import { hexToU8a } from '@polkadot/util'
+import { KeyringPair } from '@polkadot/keyring/types';
 
 const register = async (address: string) => {
   const res = await fetch(`/api/register/${address}`, {
@@ -49,13 +50,48 @@ enum Progress {
 
 const DEBUG = true;
 
+const api = new GearApi({ providerAddress: "wss://testnet.vara.network" });
+
+declare global {
+  interface Window {
+    api: GearApi;
+  }
+}
+
+async function submitProof(keyring: KeyringPair, proof: Uint8Array, voucherId: string, amount: number, programData: { programId: string, metadata: string }) {
+
+  const messageTx = api.message.send({
+    destination: programData.programId,
+    payload: {
+      Bid: {
+        proof,
+        amount: `${amount}`,
+      }
+    },
+    gasLimit: 1000000000000,
+    value: 0
+  }, ProgramMetadata.from(programData.metadata));
+
+  const voucherTx = api.voucher.call(voucherId, { SendMessage: messageTx });
+  await voucherTx.signAndSend(keyring, (events) => {
+    console.log(events.toHuman());
+  });
+}
+
 export function Component() {
-  const [account, setAccount] = useState<null | { address: string; keyring: GearKeyring; }>(null);
+  const [account, setAccount] = useState<null | { address: string; keyring: KeyringPair; }>(null);
+  const [voucher, setVoucher] = useState<null | string>(null);
   const [message, setMessage] = useState<null | string>(null);
   const [progress, setProgress] = useState<Progress>(Progress.ACCOUNT);
   const [selectedTab, setSelectedTab] = useState<string>('account');
   const [file, setFile] = useState<null | File>(null);
   const [price, setPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (DEBUG) {
+      window.api = api;
+    }
+  }, []);
 
   const generateAccount = async () => {
     const {keyring} = await GearKeyring.create('seed');
@@ -82,6 +118,7 @@ export function Component() {
     try {
       const data = await mutate([account.address], register(account.address), false);
       setMessage(`${JSON.stringify(data, null, "  ")}`);
+      setVoucher(data.voucherId);
       setProgress(Progress.PROOF);
       setTimeout(()=>setSelectedTab('proof'), 1000);
     } catch (error) {
@@ -121,6 +158,11 @@ export function Component() {
       return;
     }
 
+    if (!voucher) {
+      window.alert('Error: no voucher to place bid. Go register for auction first.');
+      return;
+    }
+
     if (!price || price <= 0) {
       window.alert('Error: no valid price to place bid. Enter a valid price and try again.');
       return;
@@ -137,7 +179,9 @@ export function Component() {
     console.log('proof:', proof);
     console.log('proofBytes:', proofBytes);
 
-    window.alert('Not implemented');
+    // window.alert('Not implemented');
+
+    await submitProof(account.keyring, proofBytes, voucher, price, programData);
   };
 
   const code = `# set the secret key of the main funding account
@@ -150,12 +194,29 @@ cargo install zkbid-cli
 # you should replace the price with the actual price you want to bid
 # the proof will be saved to proof.txt
 zkbid proof --suri "$SURI" --price 42 > proof.txt`;
+const { data: programData, error: programDataError } = useSWR('/api/program-id', fetcher);
+if (programDataError) return <div>Failed to load programData</div>;
 
-  const { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
+let { data, error } = useSWR('/api/program-state', fetcher, { refreshInterval: 5000 });
 
-  if (error) return <div>Failed to load</div>;
-  if (!data) return <div>Loading...</div>;
-
+if (error) return <div>Failed to load state</div>;
+if (!data) return <div>Loading...</div>;
+/*
+  if (!data) {
+    data = {
+      bids: [],
+      highestBid: 0,
+    };
+  }
+  let ProgramData = {
+    programId: "0x25150391f5a9f8b47246b17d2e41dfeb3381aa587ad55dbeb2172a664fa9a49a",
+  }
+  let data = {
+    bids: [],
+    highestBid: 0,
+  };
+  */
+  
   // Sort bids in descending order by amount and add rank
   const sortedBids = [...data.bids].sort((a, b) => b.amount - a.amount);
   sortedBids.forEach((bid, index) => {
