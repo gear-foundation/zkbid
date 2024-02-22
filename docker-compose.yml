@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+
+  backend:
+    build: ./backend
+    ports:
+      - 3000:3000
+    entrypoint: ["node", "build/main.js"]
+    # entrypoint: ["/bin/sh", "-c", "while true; do sleep 5; done"]
+    environment:
+      - DB_HOST=172.19.1.3
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=auction
+      - GEAR_NODE=wss://testnet.vara.network
+      - ACCOUNT_SEED=0x0b3699626cff12f26bc26504d097568859e5550d9c45d879c10f0dd4e37a5c3b
+      - AUCTION_PROGRAM=0xd34dacf935bb3677389f8f8fd58d26b89836edfb355f105618071ef8a47506cd
+      - VOUCHER_AMOUNT=30
+      - VOUCHER_DURAION=30000
+    depends_on:
+      - db
+    networks:
+      app_network:
+        ipv4_address: 172.19.1.1
+
+  frontend:
+    build: .
+    ports:
+      - 8000:8000
+    networks:
+      app_network:
+        ipv4_address: 172.19.1.2
+
+  db:
+    image: postgres:16.1
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=auction
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      app_network:
+        ipv4_address: 172.19.1.3
+
+  proxy:
+    build: ./proxy
+    ports:
+      - 80:80
+    environment:
+      - BACKEND_URL=http://172.19.1.1:3000
+      - FRONTEND_URL=http://172.19.1.2:8000
+      - NGINX_ENVSUBST_FILTER=[BACKEND_URL, FRONTEND_URL]
+    networks:
+      app_network:
+        ipv4_address: 172.19.1.4
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.0.0/16
